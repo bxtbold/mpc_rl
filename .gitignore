@@ -1,3 +1,13 @@
+# mpc_rl
+MUJOCO_LOG.TXT
+ckpts/
+logs/
+*.pt
+*.pth
+*.pkl
+*.npz
+*.npy
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

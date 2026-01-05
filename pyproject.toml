@@ -1,0 +1,99 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mpc_rl"
+version = "0.1.0"
+description = "MPC + RL research and tooling"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+    { name = "bxtbold" },
+]
+
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "torch>=2.9",
+    "gymnasium>=1.2.2",
+    "matplotlib",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.6",
+    "pytest>=8.0",
+    "pytest-cov",
+    "mypy>=1.8",
+    "ipython",
+]
+
+[tool.setuptools]
+packages = ["mpc_rl"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra -q"
+pythonpath = ["mpc_rl"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+warn_unused_ignores = true
+warn_redundant_casts = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+# --------------------
+# Ruff
+# --------------------
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+indent-width = 4
+
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "build",
+    "dist",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "B",
+    "C4",
+    "UP",
+    "SIM",
+    "RUF",
+]
+
+ignore = [
+    "E501",
+    "B008",
+    "SIM108",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["mpc_rl"]
+combine-as-imports = true
+force-sort-within-sections = true
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**.py" = ["B011", "S101"]
+"scripts/**.py" = ["T201"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+docstring-code-format = true
