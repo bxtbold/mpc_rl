@@ -1,5 +1,4 @@
 from collections.abc import Callable
-from typing import Optional
 
 import numpy as np
 import torch
@@ -18,8 +17,8 @@ class MPPI(torch.nn.Module):
         num_samples: int=1000,
         lambda_: float=1.0,
         noise_sigma: float=1.0,
-        u_min: Tensor | None=None,
-        u_max: Tensor | None=None,
+        u_min: Tensor | np.ndarray | None=None,
+        u_max: Tensor | np.ndarray | None=None,
         device: str="cuda",
     ):
         """
@@ -52,15 +51,27 @@ class MPPI(torch.nn.Module):
         self.lambda_ = lambda_
         self.sigma = noise_sigma
 
-        self.u_min = u_min.to(device)
-        self.u_max = u_max.to(device)
+        assert u_min.shape == u_max.shape == (nu,)
+        self.u_min = u_min
+        self.u_max = u_max
+        if u_min is not None and type(u_min) is np.ndarray:
+            self.u_min = torch.tensor(u_min, dtype=torch.float32, device=device)
+        if u_max is not None and type(u_max) is np.ndarray:
+            self.u_max = torch.tensor(u_max, dtype=torch.float32, device=device)
 
         # nominal control sequence (H, nu)
         self.U = torch.zeros(self.H, self.nu, device=device)
 
-        # precompute inverse covariance (diagonal)
-        self.inv_sigma2 = 1.0 / (self.sigma ** 2)
-        print("MPPI is initialized.")
+    def __str__(self):
+        return "MPPI is configured with:\n" + "\n".join([
+            f"\t- Horizon: {self.H}",
+            f"\t- Number of samples: {self.K}",
+            f"\t- State dimension: {self.nx}",
+            f"\t- Action dimension: {self.nu}",
+            f"\t- Action bounds: {self.u_min.item()} to {self.u_max.item()}",
+            f"\t- Lambda: {self.lambda_}",
+            f"\t- Noise sigma: {self.sigma}",
+        ])
 
     def get_action(self, x: Tensor | np.ndarray) -> np.ndarray:
         if isinstance(x, np.ndarray):
@@ -88,7 +99,10 @@ class MPPI(torch.nn.Module):
 
         # MPPI update: weighted perturbations
         delta_u = torch.einsum("k,khn->hn", w, eps)
-        self.U = torch.clamp(self.U + delta_u, self.u_min, self.u_max)
+        self.U = self.U + delta_u
+        # clamp to bounds (if specified)
+        if self.u_min is not None and self.u_max is not None:
+            self.U = torch.clamp(self.U, self.u_min, self.u_max)
 
         # receding horizon
         u0 = self.U[0].clone()
